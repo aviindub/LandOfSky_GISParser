@@ -1,6 +1,8 @@
 from os.path import split, join, isfile, splitext, walk
+from metadata_analyzer import analyze_metadata
 
 DATA_ROOT = 'data/'
+METADATA_EXTENSIONS = ['.shp.xml']
 
 def catalog_files(cat_ext, dirname, names):
     catalog, all_extensions = cat_ext
@@ -16,6 +18,9 @@ def catalog_files(cat_ext, dirname, names):
                 fileset_catalog[ext] = basename
             else:
                 fileset_catalog[ext] = None
+            if ext in METADATA_EXTENSIONS:
+                full_path = join(dirname, basename)
+                fileset_catalog['metadata_analysis'] = analyze_metadata(full_path)
         dir_catalog[filename] = fileset_catalog
     catalog[dirname] = dir_catalog
 
@@ -49,6 +54,8 @@ def main():
     # print all_extensions
     walk(DATA_ROOT, catalog_files, (catalog, all_extensions))
     print catalog
+    # catalog[directory_path][filename][extension]
+    # return catalog
 
 
 if __name__ == "__main__":

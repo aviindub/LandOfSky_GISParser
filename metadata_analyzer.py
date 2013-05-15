@@ -18,5 +18,15 @@ def catalog_missing_elements(tree):
     return catalog
 
 
+def csv_string(catalog):
+    csv_output = ''
+    for row in catalog:
+        csv_output += '\"{}\",\"{}\"\n'.format(row[0],row[1])
+    return csv_output
+
+
 if __name__ == '__main__':
-    print analyze_metadata('data/CountyData/buncosde_BUNCOSDE_property.shp.xml')
+    catalog = analyze_metadata('data/CountyData/buncosde_BUNCOSDE_property.shp.xml')
+    with open('analysis_test.csv', 'w') as outfile:
+        outfile.write('\"tag\",\"text\"\n')
+        outfile.write(csv_string(catalog))

@@ -14,11 +14,8 @@ def catalog_files(cat_ext, dirname, names):
         fileset_catalog = dict()
         for ext in all_extensions:
             basename = filename + ext
-            if basename in basenames:
-                fileset_catalog[ext] = basename
-            else:
-                fileset_catalog[ext] = None
-            if ext in METADATA_EXTENSIONS:
+            fileset_catalog[ext] = basename if basename in basenames else None
+            if ext in METADATA_EXTENSIONS and fileset_catalog[ext] is not None:
                 full_path = join(dirname, basename)
                 fileset_catalog['metadata_analysis'] = analyze_metadata(full_path)
         dir_catalog[filename] = fileset_catalog
@@ -26,7 +23,7 @@ def catalog_files(cat_ext, dirname, names):
 
 
 def get_unique_filenames(names):
-    return set([filename for filename, _ext in 
+    return set([filename for filename, _ext in
         [splitext(filename) for filename, _ext in 
         [splitext(n) for n in names]]])
 
@@ -47,13 +44,42 @@ def get_all_extensions(root_path):
     return extensions
 
 
+def output_csv(catalog):
+    ONE_CELL_ROW = '\"{}\"\n'
+    TWO_CELL_ROW = '\"{}\",\"{}\"\n'
+
+    csv_string = ''
+    for dirname, directory in catalog.iteritems():
+        for filename, fileset in directory.iteritems():
+            csv_string += '\n' + TWO_CELL_ROW.format('Directory:', 'Filename:')
+            csv_string += TWO_CELL_ROW.format(dirname, filename)
+            missing_files = 'Missing Files:'
+            for ext, full_filename in fileset.iteritems():
+                if ext is not 'metadata_analysis' and full_filename is None:
+                    missing_files += ' {},'.format(ext)
+            if missing_files is 'Missing Files:':
+                missing_files = 'Missing Files: None'
+            csv_string += ONE_CELL_ROW.format(missing_files)
+            csv_string += '\n' + ONE_CELL_ROW.format('Missing Metadata Elements:')
+            csv_string += TWO_CELL_ROW.format('Tag', 'Text')
+            if 'metadata_analysis' in fileset:
+                for tag, text in fileset['metadata_analysis']:
+                    csv_string += TWO_CELL_ROW.format(tag, text)
+            else:
+                csv_string += ONE_CELL_ROW.format("missing metadata file")
+
+    with open('missing_data_report.csv', 'w') as outfile:
+        outfile.write(csv_string)
+
+
 def main():
     # print 'starting'
     catalog = dict()
     all_extensions = get_all_extensions(DATA_ROOT)
     # print all_extensions
     walk(DATA_ROOT, catalog_files, (catalog, all_extensions))
-    print catalog
+    output_csv(catalog)
+    # print catalog
     # catalog[directory_path][filename][extension]
     # return catalog
 

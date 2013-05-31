@@ -1,6 +1,5 @@
 output*.txt
-missing_data_report.csv
-analysis_test.csv
+*.csv
 data
 *.pyc
 GIS_MetaCrawler

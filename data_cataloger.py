@@ -1,8 +1,10 @@
 from os.path import split, join, isfile, splitext, walk
 from metadata_analyzer import analyze_metadata
+import csv
 
-DATA_ROOT = 'data/'
+DATA_ROOT = 'data\\'
 METADATA_EXTENSIONS = ['.shp.xml']
+ALL_EXTENSIONS = set(['.dbf', '.shx', '.sbx', '.shp','.shp.xml', '.sbn', '.prj'])
 
 def catalog_files(cat_ext, dirname, names):
     catalog, all_extensions = cat_ext
@@ -23,9 +25,14 @@ def catalog_files(cat_ext, dirname, names):
 
 
 def get_unique_filenames(names):
-    return set([filename for filename, _ext in
-        [splitext(filename) for filename, _ext in 
-        [splitext(n) for n in names]]])
+    return set([strip_multiple_extensions(name) for name in names])
+
+
+def strip_multiple_extensions(filename):
+    filename, ext = splitext(filename)
+    if ext is None or ext is '':
+        return filename
+    return strip_multiple_extensions(filename)
 
 
 def get_extensions(extensions, dirname, names):
@@ -38,10 +45,64 @@ def get_extensions(extensions, dirname, names):
             extensions.add(ext)
 
 
-def get_all_extensions(root_path):
+def get_all_extensions(root_path, use_predefined=False):
+    if use_predefined:
+        return ALL_EXTENSIONS
     extensions = set()
     walk(root_path, get_extensions, extensions)
     return extensions
+
+
+def output_missing_files_report(catalog):
+
+    missing_files_rows = list()
+    for dirname, directory in catalog.iteritems():
+        for filename, fileset in directory.iteritems():
+            if has_missing_files(fileset):
+                row = dict()
+                row['file_name'] = join(dirname, filename)
+                for ext, full_filename in fileset.iteritems():
+                    if ext is not 'metadata_analysis':
+                        if full_filename is None:
+                            row[ext] = 'X'
+                        else:
+                            row[ext] = ''
+                missing_files_rows.append(row)
+    field_names = ALL_EXTENSIONS.copy()
+    field_names.add('file_name')
+    with csv.DictWriter('missing_files_report.csv', field_names) as writer:
+        for row in missing_files_rows:
+            writer.writerow(row)
+
+
+def output_incomplete_metadata_report(catalog):
+    metadata_rows = list()
+    for dirname, directory in catalog.iteritems():
+        for filename, fileset in directory.iteritems():
+            metadata_report = fileset['metadata_report']
+            if len(metadata_report) > 0:
+                metadata_rows.append(join(dirname, filename))
+                for r in metadata_report:
+                    metadata_rows.append([''] + list(r))
+    with csv.writer('incomplete_metadata_report') as writer:
+        writer.writerow(['file', 'XML element', 'text'])
+        for row in metadata_rows:
+            writer.writerow(row)
+
+
+def output_complete_metadata_report(catalog):
+    metadata_rows = list()
+    for dirname, directory in catalog.iteritems():
+        for filename, fileset in directory.iteritems():
+            metadata_report = fileset['metadata_report']
+            if len(metadata_report) is 0 and fileset['.shp.xml'] is not None:
+                pass
+                # TODO: write catalog of usable data 
+
+def has_missing_files(fileset):
+    for ext, full_filename in fileset.iteritems():
+        if ext is not 'metadata_analysis' and full_filename is None:
+            return true
 
 
 def output_csv(catalog):
@@ -61,7 +122,7 @@ def output_csv(catalog):
                 missing_files = 'Missing Files: None'
             csv_string += ONE_CELL_ROW.format(missing_files)
             csv_string += '\n' + ONE_CELL_ROW.format('Missing Metadata Elements:')
-            csv_string += TWO_CELL_ROW.format('Tag', 'Text')
+            csv_string += TWO_CELL_ROW.format('Tag:', 'Text:')
             if 'metadata_analysis' in fileset:
                 for tag, text in fileset['metadata_analysis']:
                     csv_string += TWO_CELL_ROW.format(tag, text)

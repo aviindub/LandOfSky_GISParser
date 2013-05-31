@@ -8,47 +8,53 @@ COMPLETE_TARGET_ELEMENTS = ['title', 'abstract', ]
 
 def analyze_metadata(file_path):
     if not valid_xml(file_path):
-        return 0
+        return None
     xml_tree = ET.parse(file_path)
     incomplete_catalog = catalog_missing_elements(xml_tree)
-    if len(incomplete_catalog) > 0:
+    if any(incomplete_catalog):
         return incomplete_catalog
     else:
-        return catalog_complete_metadata(xml_tree)
+        return catalog_complete_elements(xml_tree)
 
 
 def valid_xml(file_path):
     try:
-        parse_file(file_path)
+        parse_file_for_validation(file_path)
     except Exception, e:
         print e
         return False
     return True
 
 
-def parse_file(file_path):
+def parse_file_for_validation(file_path):
     parser = make_validator_parser()
     parser.setContentHandler(ContentHandler())
     parser.parse(file_path)
 
 
-def catalog_missing_elements(xml_tree):
+def catalog_validated_elements(xml_tree, target_strings):
+    '''catalogs elements that contain a string in target_strings'''
+    
     catalog = list()
     for element in xml_tree.iter():
-        if element.text is not None and element_is_incomplete(element):
+        if element.text is not None and check_element_text(element.text, target_strings):
             catalog.append((element.tag, element.text))
     return catalog
 
 
-def catalog_complete_metadata(xml_tree):
-    pass
-
-
-def element_is_incomplete(element):
-    for target in INCOMPLETE_TARGET_STRINGS:
-        if target in element.text:
+def check_element_text(element_text, target_strings):
+    for target in target_strings:
+        if target in element_text:
             return True
-    return False
+    return False    
+
+
+def catalog_missing_elements(xml_tree):
+    return catalog_validated_elements(xml_tree, INCOMPLETE_TARGET_STRINGS)
+
+
+def catalog_complete_elements(xml_tree):
+    return catalog_validated_elements(xml_tree, COMPLETE_TARGET_STRINGS)
 
 
 def csv_string(catalog):

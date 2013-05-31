@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # TEST_FILE = 'data/CountyData/BuncombeCo_bridges.shp.xml'
     # TEST_FILE = 'data/CountyData/parcels_2002.shp.xml'
     catalog = analyze_metadata(TEST_FILE)
-    if catalog is 0:
+    if catalog is None:
         print 'validation falied'
     else:
         with open('incomplete_metadata_report.csv', 'wb') as csvfile:

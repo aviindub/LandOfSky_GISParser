@@ -1,5 +1,5 @@
 from os.path import split, join, isfile, splitext, walk
-from metadata_analyzer import analyze_metadata
+from metadata_analyzer import analyze_metadata, STATUS_COMPLETE, STATUS_INCOMPLETE
 import csv
 
 DATA_ROOT = 'data\\'
@@ -19,7 +19,7 @@ def catalog_files(cat_ext, dirname, names):
             fileset_catalog[ext] = basename if basename in basenames else None
             if ext in METADATA_EXTENSIONS and fileset_catalog[ext] is not None:
                 full_path = join(dirname, basename)
-                fileset_catalog['metadata_analysis'] = analyze_metadata(full_path)
+                fileset_catalog['metadata_analysis'], fileset_catalog['metadata_status'] = analyze_metadata(full_path)
         dir_catalog[filename] = fileset_catalog
     catalog[dirname] = dir_catalog
 
@@ -54,7 +54,6 @@ def get_all_extensions(root_path, use_predefined=False):
 
 
 def output_missing_files_report(catalog):
-
     missing_files_rows = list()
     for dirname, directory in catalog.iteritems():
         for filename, fileset in directory.iteritems():
@@ -99,6 +98,7 @@ def output_complete_metadata_report(catalog):
                 pass
                 # TODO: write catalog of usable data 
 
+
 def has_missing_files(fileset):
     for ext, full_filename in fileset.iteritems():
         if ext is not 'metadata_analysis' and full_filename is None:
@@ -142,6 +142,8 @@ def main():
     output_csv(catalog)
     # print catalog
     # catalog[directory_path][filename][extension]
+    # catalog[directory_path][filename]['metadata_analysis']
+    # catalog[directory_path][filename]['metadata_status']
     # return catalog
 
 

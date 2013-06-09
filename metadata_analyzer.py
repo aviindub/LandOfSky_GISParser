@@ -100,32 +100,44 @@ from xml.sax.handler import ContentHandler
 from xml.sax import make_parser as make_validator_parser
 
 INCOMPLETE_TARGET_STRINGS = ['REQUIRED']
+# COMPLETE_TARGET_ELEMENTS = [u'resTitle', u'abstract', u'purpose', u'supplinf', 
+#     u'themekey', u'placekey', u'datacred', u'origin', u'accconst', u'useconst',
+#     u'westbc', u'eastbc', u'northbc', u'southbc', u'leftbc', u'rightbc',
+#     u'bottombc', u'topbc', u'progress', u'update', u'current', u'begdate',
+#     u'begtime', u'enddate', u'endtime', u'pubdate', u'CreaDate', u'SyncDate']
 COMPLETE_TARGET_ELEMENTS = ['resTitle', 'abstract', 'purpose', 'supplinf', 
     'themekey', 'placekey', 'datacred', 'origin', 'accconst', 'useconst',
     'westbc', 'eastbc', 'northbc', 'southbc', 'leftbc', 'rightbc',
     'bottombc', 'topbc', 'progress', 'update', 'current', 'begdate',
     'begtime', 'enddate', 'endtime', 'pubdate', 'CreaDate', 'SyncDate']
-STATUS_INCOMPLETE = 'no'
-STATUS_COMPLETE = 'yes'
+STATUS_INCOMPLETE = 'incomplete metadata'
+STATUS_COMPLETE = 'complete metadata'
+STATUS_VALIDATION_FAILURE = 'validation failure'
 
 def analyze_metadata(file_path):
+    print 'analyzing ' + file_path
     if not valid_xml(file_path):
-        return None
+        print '**XML validation failure: ' + file_path
+        return None, STATUS_VALIDATION_FAILURE
     xml_tree = ET.parse(file_path)
-    #incomplete_catalog = catalog_validated_elements(xml_tree, INCOMPLETE_TARGET_STRINGS)
     incomplete_catalog = [e for e in xml_tree.iter() if is_required_incomplete(e)]
-    if any(incomplete_catalog):
+    # print incomplete_catalog
+    if len(incomplete_catalog) > 0:
+        print 'INCOMPLETE'
+        # print incomplete_catalog, STATUS_INCOMPLETE
         return incomplete_catalog, STATUS_INCOMPLETE
     else:
-        #return catalog_validated_elements(xml_tree, COMPLETE_TARGET_ELEMENTS)
         complete_catalog = [e for e in xml_tree.iter() if is_target(e)]
+        print 'COMPLETE'
+        # print complete_catalog, STATUS_COMPLETE
         return complete_catalog, STATUS_COMPLETE
-
 
 def is_required_incomplete(element):
     if element.text is not None:
         for target in INCOMPLETE_TARGET_STRINGS:
-            if target in element.text:
+            # print target +' '+ element.text
+            # print '{} {}'.format(type(target), type(element.text))
+            if str(target) in str(element.text):
                 return True
     return False
 
@@ -133,41 +145,21 @@ def is_required_incomplete(element):
 def is_target(element):
     if element.text is not None:
         for target in COMPLETE_TARGET_ELEMENTS:
-            if element.tag is target:
+            # if target == u'abstract': print 'target: {} tag: {}'.format(target, element.tag)
+            if element.tag == target:
                 return True
     return False
 
 
 def valid_xml(file_path):
+    parser = make_validator_parser()
+    parser.setContentHandler(ContentHandler())
     try:
-        parse_file_for_validation(file_path)
+        parser.parse(file_path)
     except Exception, e:
         print e
         return False
     return True
-
-
-def parse_file_for_validation(file_path):
-    parser = make_validator_parser()
-    parser.setContentHandler(ContentHandler())
-    parser.parse(file_path)
-
-
-def catalog_validated_elements(xml_tree, target_strings):
-    '''catalogs elements that contain a string in target_strings'''
-    
-    catalog = list()
-    for element in xml_tree.iter():
-        if element.text is not None and check_element_text(element.text, target_strings):
-            catalog.append((element.tag, element.text))
-    return catalog
-
-
-def csv_string(catalog):
-    csv_output = ''
-    for row in catalog:
-        csv_output += '\"{}\",\"{}\"\n'.format(row[0],row[1])
-    return csv_output
 
 
 if __name__ == '__main__':
@@ -177,10 +169,12 @@ if __name__ == '__main__':
     TEST_FILE = 'data/CountyData/buncosde_BUNCOSDE_property.shp.xml'
     # TEST_FILE = 'data/CountyData/BuncombeCo_bridges.shp.xml'
     # TEST_FILE = 'data/CountyData/parcels_2002.shp.xml'
-    catalog = analyze_metadata(TEST_FILE)
+    catalog, status = analyze_metadata(TEST_FILE)
     if catalog is None:
         print 'validation falied'
     else:
+        print status
+        print catalog
         with open('incomplete_metadata_report.csv', 'wb') as csvfile:
             writer = csv.writer(csvfile)
             for row in catalog: writer.writerow(row)

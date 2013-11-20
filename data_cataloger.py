@@ -23,10 +23,10 @@ def catalog_files(cat_ext, dirname, names):
                 if fileset_catalog[ext] is not None:
                     full_path = join(dirname, basename)
                     fileset_catalog['metadata_analysis'], fileset_catalog['metadata_status'] = metadata_analyzer.analyze_metadata(full_path)
-                    print fileset_catalog['metadata_analysis']
-                    print fileset_catalog['metadata_status']
+                    # print fileset_catalog['metadata_analysis']
+                    # print fileset_catalog['metadata_status']
                 else:
-                # print 'hit else'
+                    # print 'hit else'
                     fileset_catalog['metadata_analysis'] = None
                     fileset_catalog['metadata_status'] = STATUS_MISSING
         dir_catalog[filename] = fileset_catalog
@@ -82,13 +82,9 @@ def output_incomplete_metadata_report(catalog):
     metadata_rows = list()
     for dirname, directory in catalog.iteritems():
         for filename, fileset in directory.iteritems():
-            # print join(dirname, filename)
             metadata_report = fileset['metadata_analysis']
-            # print metadata_report
-            # print fileset['metadata_status']
             if metadata_report is not None and len(metadata_report) > 0 \
               and fileset['metadata_status'] == metadata_analyzer.STATUS_INCOMPLETE:
-                print 'OUTPUTTING INCOMPLETE'
                 full_filename = join(dirname, filename)
                 row = [full_filename]
                 for element in metadata_report:
@@ -106,10 +102,8 @@ def output_complete_metadata_report(catalog):
         for dirname, directory in catalog.iteritems():
             for filename, fileset in directory.iteritems():
                 metadata_report = fileset['metadata_analysis']
-                # print metadata_report
                 if fileset['metadata_status'] == metadata_analyzer.STATUS_COMPLETE \
                   and len(metadata_report) > 0 and fileset['.shp.xml'] is not None:
-                    print 'OUTPUTTING COMPLETE'
                     for element in metadata_report:
                         writer.writerow([filename, element.tag, element.text])
 
@@ -121,15 +115,12 @@ def has_missing_files(fileset):
 
 
 def main():
-    # print 'starting'
+    print 'starting'
     catalog = dict()
-    # all_extensions = get_all_extensions(DATA_ROOT)
-    # print all_extensions
     walk(DATA_ROOT, catalog_files, (catalog, ALL_EXTENSIONS))
     output_missing_files_report(catalog)
     output_incomplete_metadata_report(catalog)
     output_complete_metadata_report(catalog)
-    # print catalog
     # catalog[directory_path][filename][extension]
     # catalog[directory_path][filename]['metadata_analysis']
     # catalog[directory_path][filename]['metadata_status']

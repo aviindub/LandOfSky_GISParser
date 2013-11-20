@@ -123,13 +123,11 @@ def analyze_metadata(file_path):
     incomplete_catalog = [e for e in xml_tree.iter() if is_required_incomplete(e)]
     # print incomplete_catalog
     if len(incomplete_catalog) > 0:
-        print 'INCOMPLETE'
-        # print incomplete_catalog, STATUS_INCOMPLETE
+        # print 'INCOMPLETE'
         return incomplete_catalog, STATUS_INCOMPLETE
     else:
         complete_catalog = [e for e in xml_tree.iter() if is_target(e)]
-        print 'COMPLETE'
-        # print complete_catalog, STATUS_COMPLETE
+        # print 'COMPLETE'
         return complete_catalog, STATUS_COMPLETE
 
 def is_required_incomplete(element):

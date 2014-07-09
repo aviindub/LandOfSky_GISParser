@@ -1,8 +1,8 @@
 from os.path import split, join, isfile, splitext, walk
 import metadata_analyzer
 import csv
+import sys
 
-DATA_ROOT = 'data\\'
 METADATA_EXTENSIONS = ['.shp.xml']
 ALL_EXTENSIONS = set(['.dbf', '.shx', '.sbx', '.shp','.shp.xml', '.sbn', '.prj'])
 STATUS_MISSING = 'missing metadata file'
@@ -116,8 +116,9 @@ def has_missing_files(fileset):
 
 def main():
     print 'starting'
+    data_root = sys.argv[1]
     catalog = dict()
-    walk(DATA_ROOT, catalog_files, (catalog, ALL_EXTENSIONS))
+    walk(data_root, catalog_files, (catalog, ALL_EXTENSIONS))
     output_missing_files_report(catalog)
     output_incomplete_metadata_report(catalog)
     output_complete_metadata_report(catalog)

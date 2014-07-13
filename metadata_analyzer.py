@@ -135,8 +135,11 @@ def is_required_incomplete(element):
         for target in INCOMPLETE_TARGET_STRINGS:
             # print target +' '+ element.text
             # print '{} {}'.format(type(target), type(element.text))
-            if str(target) in str(element.text):
-                return True
+            try:
+                if str(target) in str(element.text):
+                    return True
+            except UnicodeEncodeError as e:
+                return False
     return False
 
 
@@ -144,8 +147,11 @@ def is_target(element):
     if element.text is not None:
         for target in COMPLETE_TARGET_ELEMENTS:
             # if target == u'abstract': print 'target: {} tag: {}'.format(target, element.tag)
-            if element.tag == target:
-                return True
+            try:
+                if element.tag == target:
+                    return True
+            except UnicodeEncodeError as e:
+                return False
     return False
 
 
